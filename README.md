@@ -10,3 +10,12 @@ Within the implementation we use a recurrent neural network to learn the transit
 2. *a*: Commitment to a symbol. 
 3. *r*: Positive for each correct decision. Negative for incorrect decision. 
         We also penalize each stimuli presentation to avoid infinite loops.
+        
+If you want to use data please cite:
+`@article{kocanaogullari2018optimal,
+  title={Optimal Query Selection Using Multi-Armed Bandits},
+  author={Kocanaogullari, Aziz and Marghi, Yeganeh M and Akcakaya, Murat and Erdogmus, Deniz},
+  journal={IEEE Signal Processing Letters},
+  year={2018},
+  publisher={IEEE}
+}`
