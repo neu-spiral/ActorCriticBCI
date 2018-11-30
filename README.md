@@ -12,6 +12,7 @@ Within the implementation we use a recurrent neural network to learn the transit
         We also penalize each stimuli presentation to avoid infinite loops.
         
 If you want to use data please cite:
+
 `@article{kocanaogullari2018optimal,
   title={Optimal Query Selection Using Multi-Armed Bandits},
   author={Kocanaogullari, Aziz and Marghi, Yeganeh M and Akcakaya, Murat and Erdogmus, Deniz},
