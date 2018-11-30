@@ -14,9 +14,13 @@ Within the implementation we use a recurrent neural network to learn the transit
 If you want to use data please cite:
 
 `@article{kocanaogullari2018optimal,
+
   title={Optimal Query Selection Using Multi-Armed Bandits},
+  
   author={Kocanaogullari, Aziz and Marghi, Yeganeh M and Akcakaya, Murat and Erdogmus, Deniz},
+  
   journal={IEEE Signal Processing Letters},
+  
   year={2018},
-  publisher={IEEE}
-}`
+  
+  publisher={IEEE}}`
