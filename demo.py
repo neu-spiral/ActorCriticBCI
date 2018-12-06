@@ -15,16 +15,19 @@ import shutil
 import matplotlib.pyplot as plt
 from modules.stopping_actor import DeepStoppingActorCritic
 from modules.environment import RSVPCPEnvironment
+import datetime
 
-output_graph = True
-log_dir = './log'
 num_workers = multiprocessing.cpu_count()
-max_step_episode = 50
-max_global_epoch = 5000
+max_step_episode = 20
+max_global_epoch = 20000
 global_network_scope = 'Global_Net'
 backprop_num = 10
 
-gamma = 0.99
+flag_train = True  # if set to true trains the mode and saves the model to path
+max_num_mc = 500  # # of episo  des in testing if flag is false
+model_path = "model/model.ckpt"
+
+gamma = 0.99  # decay for reward in time
 learning_rate_actor = 0.002  # learning rate for actor
 learning_rate_critic = 0.005  # learning rate for critic
 global_running_reward = []
@@ -79,7 +82,8 @@ class Worker(object):
                 # local machine episode count
                 local_count += 1
                 # get the action and next rnn state
-                a, rnn_state_ = self.actor_critic.choose_action(s, rnn_state)
+                a, rnn_state_ = self.actor_critic.choose_action(s, rnn_state,
+                                                                flag_train)
                 s_, r, done, info = self.env.step(a)
 
                 # If number of trials in an episodes exceeds threshold, stop.
@@ -160,7 +164,9 @@ class Worker(object):
 
 
 if __name__ == "__main__":
+
     sess = tf.Session()
+    now = datetime.datetime.now()
 
     with tf.device("/cpu:0"):
         optimizer_actor = tf.train.RMSPropOptimizer(learning_rate_actor,
@@ -171,49 +177,97 @@ if __name__ == "__main__":
             DeepStoppingActorCritic(global_network_scope, size_action,
                                     size_state, sess, optimizer_actor,
                                     optimizer_critic)
+
         workers = []
         # Create workers
         for i in range(num_workers):
             i_name = 'W_%i' % i  # worker name
             workers.append(Worker(i_name, global_actor_critic))
+    saver = tf.train.Saver(var_list=tf.get_collection(
+        tf.GraphKeys.GLOBAL_VARIABLES, scope=global_network_scope))
 
-    coord = tf.train.Coordinator()
-    sess.run(tf.global_variables_initializer())
+    if flag_train:
+        coord = tf.train.Coordinator()
+        sess.run(tf.global_variables_initializer())
 
-    if output_graph:
-        if os.path.exists(log_dir):
-            shutil.rmtree(log_dir)
-        tf.summary.FileWriter(log_dir, sess.graph)
+        worker_threads = []
+        for worker in workers:
+            job = lambda: worker.work()
+            t = threading.Thread(target=job)
+            t.start()
+            worker_threads.append(t)
+        coord.join(worker_threads)
 
-    worker_threads = []
-    for worker in workers:
-        job = lambda: worker.work()
-        t = threading.Thread(target=job)
-        t.start()
-        worker_threads.append(t)
-    coord.join(worker_threads)
+        save_path = saver.save(sess, model_path)
+        print("Model saved in path: %s" % save_path)
 
-    # Plot final training results
-    fig = plt.figure()
-    ax = fig.add_subplot(211)
-    ax.plot(np.arange(len(global_running_reward)), global_running_reward)
-    ax.set_ylabel('Total moving reward')
+        # Plot final training results
+        fig = plt.figure()
+        ax = fig.add_subplot(211)
+        ax.plot(np.arange(len(global_running_reward)), global_running_reward)
+        ax.set_ylabel('Total moving reward')
 
-    ax1 = fig.add_subplot(212)
-    ax2 = ax1.twinx()
-    tmp = [np.sum(list_decision[a:a + hop]) / hop for a in
-           range(1, len(list_decision) - hop)]
-    ax1.plot(np.arange(len(tmp)), tmp, label='acc')
-    ax1.set_xlabel('step')
-    ax1.set_ylabel('Accuracy')
-    tmp2 = [np.sum(list_steps[a:a + hop]) / hop for a in
-            range(1, len(list_steps) - hop)]
-    ax2.plot(np.arange(len(tmp)), tmp2, color='k', label='seq')
-    ax2.set_ylabel('Sequences')
-    h1, l1 = ax1.get_legend_handles_labels()
-    h2, l2 = ax2.get_legend_handles_labels()
-    ax1.legend(h1 + h2, l1 + l2, loc=4)
-    plt.show()
+        ax1 = fig.add_subplot(212)
+        ax2 = ax1.twinx()
+        tmp = [np.sum(list_decision[a:a + hop]) / hop for a in
+               range(1, len(list_decision) - hop)]
+        ax1.plot(np.arange(len(tmp)), tmp, label='acc')
+        ax1.set_xlabel('step')
+        ax1.set_ylabel('Accuracy')
+        tmp2 = [np.sum(list_steps[a:a + hop]) / hop for a in
+                range(1, len(list_steps) - hop)]
+        ax2.plot(np.arange(len(tmp)), tmp2, color='k', label='seq')
+        ax2.set_ylabel('Sequences')
+        h1, l1 = ax1.get_legend_handles_labels()
+        h2, l2 = ax2.get_legend_handles_labels()
+        ax1.legend(h1 + h2, l1 + l2, loc=4)
+        plt.show()
 
-    print("Accuracy:{}, Sequence:{}".format(np.max(tmp),
-                                            tmp2[np.argmax(tmp)]))
+        print("Accuracy:{}, Sequence:{}".format(np.max(tmp),
+                                                tmp2[np.argmax(tmp)]))
+
+    # Test the pretrained model on the path
+    else:
+        saver.restore(sess, model_path)
+
+        env = RSVPCPEnvironment(int(12))
+        actor_critic_test = global_actor_critic
+
+        for idx in range(max_num_mc):
+            s = env.reset()
+            # zero rnn state at beginning
+            rnn_state = sess.run(actor_critic_test.init_state)
+            keep_state = rnn_state.copy()  # keep rnn state for global
+            done = 0
+            # local machine episode count. Start with -1 to increment directly
+            #   within the for loop
+            local_count = -1
+            while not done:
+                # local machine episode count
+                local_count += 1
+                # get the action and next rnn state
+                a, rnn_state_ = actor_critic_test.choose_action(s, rnn_state,
+                                                                flag_train)
+                s_, r, done, info = env.step(a)
+
+                s = s_  # renew current state
+                rnn_state = rnn_state_  # renew rnn state
+
+                if local_count == max_step_episode - 1:
+                    done = True
+
+                if done:
+                    if info[1] == True:
+                        list_decision.append(1)
+                        list_steps.append(info[0])
+                    elif info[1] == False:
+                        list_decision.append(0)
+                        list_steps.append(info[0])
+                    break
+
+        tmp = [np.sum(list_decision[a:a + hop]) / hop for a in
+               range(1, len(list_decision) - hop)]
+        tmp2 = [np.sum(list_steps[a:a + hop]) / hop for a in
+                range(1, len(list_steps) - hop)]
+        print("Accuracy:{}, Sequence:{}".format(np.max(tmp),
+                                                tmp2[np.argmax(tmp)]))
