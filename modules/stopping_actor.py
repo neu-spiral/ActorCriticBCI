@@ -20,9 +20,8 @@ class DeepStoppingActorCritic(object):
         if scope == global_net_scope:  # get global network
             with tf.variable_scope(scope):
                 self.s = tf.placeholder(tf.float32, [None, dim_state], 'state')
-                self.a_params, self.c_params = self._build_net(scope,
-                                                               dim_action,
-                                                               dim_state)[-2:]
+                self.a_prob, self.v, self.a_params, self.c_params = \
+                    self._build_net(scope, dim_action, dim_state)
         else:  # local net, calculate losses
             with tf.variable_scope(scope):
                 self.s = tf.placeholder(tf.float32, [None, dim_state], 'state')
@@ -106,12 +105,15 @@ class DeepStoppingActorCritic(object):
     def pull_global(self):  # run by a local
         self.session.run([self.pull_a_params_op, self.pull_c_params_op])
 
-    def choose_action(self, s, cell_state):  # run by a local
+    def choose_action(self, s, cell_state, flag_train):  # run by a local
         s = s[np.newaxis, :]
         a_w, cell_state = self.session.run([self.a_prob, self.final_state],
                                            {self.s: s,
                                             self.init_state: cell_state})
 
-        a = np.random.choice(range(a_w.shape[1]), p=a_w.ravel())
+        if flag_train:
+            a = np.random.choice(range(a_w.shape[1]), p=a_w.ravel())
+        else:
+            a = np.argmax(a_w)
 
         return a, cell_state
