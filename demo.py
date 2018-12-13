@@ -10,8 +10,7 @@ import multiprocessing
 import threading
 import tensorflow as tf
 import numpy as np
-import os
-import shutil
+from modules.progress_bar import progress_bar
 import matplotlib.pyplot as plt
 from modules.stopping_actor import DeepStoppingActorCritic
 from modules.environment import RSVPCPEnvironment
@@ -24,7 +23,7 @@ global_network_scope = 'Global_Net'
 backprop_num = 10
 
 flag_train = True  # if set to true trains the mode and saves the model to path
-max_num_mc = 500  # # of episo  des in testing if flag is false
+max_num_mc = 5000  # # of episo  des in testing if flag is false
 model_path = "model/model.ckpt"
 
 gamma = 0.99  # decay for reward in time
@@ -233,7 +232,11 @@ if __name__ == "__main__":
         env = RSVPCPEnvironment(int(12))
         actor_critic_test = global_actor_critic
 
+        progress_bar(0, max_num_mc, prefix='Progress:', suffix='Complete',
+                     length=50)
         for idx in range(max_num_mc):
+            progress_bar(idx + 1, max_num_mc, prefix='Progress:',
+                         suffix='Complete', length=50)
             s = env.reset()
             # zero rnn state at beginning
             rnn_state = sess.run(actor_critic_test.init_state)
