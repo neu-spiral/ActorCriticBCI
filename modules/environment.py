@@ -13,7 +13,7 @@ import numpy as np
 
 max_num_seq = 20  # maximum number of allowed sequences
 sc_threshold = 60  # threshold to remove outliers data
-delta = 10  # manually separate reward distributions conditioned on (a,s) tuple
+delta = 5  # manually separate reward distributions conditioned on (a,s) tuple
 len_query = 5  # number of trials in a sequence (batch querying)
 evidence_names = ['LM', 'Eps']  # types of evidences during simulation
 
@@ -136,7 +136,7 @@ class RSVPCPEnvironment(object):
             self.decision_maker.list_epoch[-1]['list_distribution'])[-1]
 
         self.step_counter = 0
-        s = np.append(s, self.step_counter / max_num_seq)
+        # s = np.append(s, self.step_counter / max_num_seq)
 
         return s
 
@@ -185,7 +185,7 @@ class RSVPCPEnvironment(object):
             _, self.sti = self.decision_maker.decide(prob_new)
             s = np.array(
                 self.decision_maker.list_epoch[-1]['list_distribution'])[-1]
-            s = np.append(s, self.step_counter / max_num_seq)
+            # s = np.append(s, self.step_counter / max_num_seq)
             if self.step_counter < 5:
                 r = - 1
             else:
@@ -197,7 +197,7 @@ class RSVPCPEnvironment(object):
         else:
             s = np.array(self.decision_maker.list_epoch[-1][
                              'list_distribution'])[-1]
-            s = np.append(s, self.step_counter / max_num_seq)
+            # s = np.append(s, self.step_counter / max_num_seq)
 
             if np.argmax(s[:-1]) == self.alp.index(self.oracle.state):
 
