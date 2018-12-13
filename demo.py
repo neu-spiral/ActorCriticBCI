@@ -22,7 +22,7 @@ max_global_epoch = 20000
 global_network_scope = 'Global_Net'
 backprop_num = 10
 
-flag_train = True  # if set to true trains the mode and saves the model to path
+flag_train = False  # if set to true trains the mode and saves the model to path
 max_num_mc = 5000  # # of episo  des in testing if flag is false
 model_path = "model/model.ckpt"
 
@@ -34,7 +34,7 @@ list_decision, list_steps = [], []
 global_epoch = 0
 hop = 50
 
-size_state = 29
+size_state = 28
 size_action = 2
 
 
