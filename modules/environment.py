@@ -13,7 +13,7 @@ import numpy as np
 
 max_num_seq = 20  # maximum number of allowed sequences
 sc_threshold = 60  # threshold to remove outliers data
-delta = 5  # manually separate reward distributions conditioned on (a,s) tuple
+delta = 4  # manually separate reward distributions conditioned on (a,s) tuple
 len_query = 5  # number of trials in a sequence (batch querying)
 evidence_names = ['LM', 'Eps']  # types of evidences during simulation
 
@@ -140,10 +140,11 @@ class RSVPCPEnvironment(object):
 
         return s
 
-    def step(self, a):
+    def step(self, a, dif_mul = 1):
         """ Takes the step given an action
             Args:
                 a(bin): a binary decision to stop or continue
+                dif_mul(float): difficulty multiplier for number of sequences
             Return:
                 s(ndarray[float]): state of the environment
                 r(float): reward for the (a,s) pair
@@ -152,7 +153,7 @@ class RSVPCPEnvironment(object):
                     are going to be used during training or to report perf. """
         d = a
 
-        if (not d) and self.step_counter < 30:
+        if (not d) and self.step_counter < 20:
             d = 0
             score = self.oracle.answer(self.sti)
             # get the likelihoods for the scores
@@ -187,9 +188,9 @@ class RSVPCPEnvironment(object):
                 self.decision_maker.list_epoch[-1]['list_distribution'])[-1]
             # s = np.append(s, self.step_counter / max_num_seq)
             if self.step_counter < 5:
-                r = - 1
+                r = -.1 * dif_mul
             else:
-                r = - 1
+                r = -.1 * dif_mul
 
             is_correct = None
             self.step_counter += 1
@@ -201,7 +202,7 @@ class RSVPCPEnvironment(object):
 
             if np.argmax(s[:-1]) == self.alp.index(self.oracle.state):
 
-                r = 60
+                r = 1
                 is_correct = True
             else:
                 r = -2

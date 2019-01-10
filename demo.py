@@ -18,24 +18,27 @@ import datetime
 
 num_workers = multiprocessing.cpu_count()
 max_step_episode = 20
-max_global_epoch = 20000
+max_global_epoch = 60000
 global_network_scope = 'Global_Net'
-backprop_num = 10
+backprop_num = 50
 
-flag_train = False  # if set to true trains the mode and saves the model to path
-max_num_mc = 5000  # # of episo  des in testing if flag is false
-model_path = "model/model.ckpt"
+flag_train = True  # if set to true trains the mode and saves the model to path
+max_num_mc = 1000  # # of episodes in testing if flag is false
+model_path = "model/model_discount_3/model.ckpt"
 
-gamma = 0.99  # decay for reward in time
-learning_rate_actor = 0.002  # learning rate for actor
+gamma = 0.90  # decay for reward in time
+learning_rate_actor = 0.001  # learning rate for actor
 learning_rate_critic = 0.005  # learning rate for critic
 global_running_reward = []
 list_decision, list_steps = [], []
 global_epoch = 0
-hop = 50
+hop = 500
 
 size_state = 28
 size_action = 2
+
+# difficulty is increased, agent is tasked to perform faster!
+step_difficulty = max_global_epoch / 6  # steps to increase difficulty
 
 
 class Worker(object):
@@ -60,6 +63,7 @@ class Worker(object):
 
         # global parameters to be shared among different workers.
         global global_running_reward, global_epoch, list_decision, list_steps
+
         # global step_counter
         total_step = 1
 
@@ -83,10 +87,12 @@ class Worker(object):
                 # get the action and next rnn state
                 a, rnn_state_ = self.actor_critic.choose_action(s, rnn_state,
                                                                 flag_train)
-                s_, r, done, info = self.env.step(a)
+
+                dif_mul = int(global_epoch / step_difficulty)
+                s_, r, done, info = self.env.step(a, dif_mul=dif_mul)
 
                 # If number of trials in an episodes exceeds threshold, stop.
-                if local_count == max_step_episode - 1:
+                if local_count == max_step_episode:
                     done = True
 
                 # If episode is finished, update actual statistics;
@@ -203,7 +209,9 @@ if __name__ == "__main__":
         # Plot final training results
         fig = plt.figure()
         ax = fig.add_subplot(211)
-        ax.plot(np.arange(len(global_running_reward)), global_running_reward)
+        tmp = [np.sum(global_running_reward[a:a + hop]) / hop for a in
+               range(1, len(list_decision) - hop)]
+        ax.plot(np.arange(len(tmp)), tmp)
         ax.set_ylabel('Total moving reward')
 
         ax1 = fig.add_subplot(212)
@@ -256,7 +264,7 @@ if __name__ == "__main__":
                 s = s_  # renew current state
                 rnn_state = rnn_state_  # renew rnn state
 
-                if local_count == max_step_episode - 1:
+                if local_count == max_step_episode:
                     done = True
 
                 if done:
