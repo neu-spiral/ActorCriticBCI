@@ -4,9 +4,9 @@ import tensorflow as tf
 import numpy as np
 
 cell_size = 30
-size_dense_val = 30
-size_dense_act = 15
-entropy_beta = 0.001
+size_dense_val = 20
+size_dense_act = 10
+entropy_beta = 0.01
 
 
 class DeepStoppingActorCritic(object):
