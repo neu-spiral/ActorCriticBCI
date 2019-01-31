@@ -13,7 +13,7 @@ import numpy as np
 
 max_num_seq = 20  # maximum number of allowed sequences
 sc_threshold = 60  # threshold to remove outliers data
-delta = 4  # manually separate reward distributions conditioned on (a,s) tuple
+delta = 6  # manually separate reward distributions conditioned on (a,s) tuple
 len_query = 5  # number of trials in a sequence (batch querying)
 evidence_names = ['LM', 'Eps']  # types of evidences during simulation
 
@@ -125,9 +125,9 @@ class RSVPCPEnvironment(object):
         self.conjugator.reset_history()
 
         # TODO: make it optional to adjust the difficulty of the language model
-        lm_prior = np.abs(np.random.randn(len(alp)))
+        lm_prior = 5 * np.abs(np.random.randn(len(alp)))
         # lm_prior[self.alp.index(self.oracle.state)] = np.min(lm_prior)
-        # lm_prior[self.alp.index(self.oracle.state)] /= 100
+        # lm_prior[self.alp.index(self.oracle.state)] /= 1.1
         lm_prior /= np.sum(lm_prior)
         prob = self.conjugator.update_and_fuse({evidence_names[0]: lm_prior})
         prob_new = np.array([i for i in prob])
@@ -140,7 +140,7 @@ class RSVPCPEnvironment(object):
 
         return s
 
-    def step(self, a, dif_mul = 1):
+    def step(self, a, dif_mul=1):
         """ Takes the step given an action
             Args:
                 a(bin): a binary decision to stop or continue
@@ -188,9 +188,9 @@ class RSVPCPEnvironment(object):
                 self.decision_maker.list_epoch[-1]['list_distribution'])[-1]
             # s = np.append(s, self.step_counter / max_num_seq)
             if self.step_counter < 5:
-                r = -.1 * dif_mul
+                r = -.05 * dif_mul
             else:
-                r = -.1 * dif_mul
+                r = -.05 * dif_mul
 
             is_correct = None
             self.step_counter += 1
