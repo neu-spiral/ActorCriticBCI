@@ -143,17 +143,19 @@ class RSVPCPEnvironment(object):
     def step(self, a, dif_mul=1):
         """ Takes the step given an action
             Args:
-                a(bin): a binary decision to stop or continue
+                a(int): an integer denoting the chance to continue or which
+                    element is chosen for the system. a = 28 is continue
                 dif_mul(float): difficulty multiplier for number of sequences
             Return:
                 s(ndarray[float]): state of the environment
                 r(float): reward for the (a,s) pair
-                d(bin): 1 if episode is finished 0 if not
+                d(int): 1 if episode is finished 0 if not
                 info(list[..]): a list of information varialbes that can
                     are going to be used during training or to report perf. """
-        d = a
 
-        if (not d) and self.step_counter < 20:
+        d = (a == 28)
+
+        if d and self.step_counter < 20:
             d = 0
             score = self.oracle.answer(self.sti)
             # get the likelihoods for the scores
@@ -188,9 +190,9 @@ class RSVPCPEnvironment(object):
                 self.decision_maker.list_epoch[-1]['list_distribution'])[-1]
             # s = np.append(s, self.step_counter / max_num_seq)
             if self.step_counter < 5:
-                r = -.05 * dif_mul
+                r = -.1 * dif_mul
             else:
-                r = -.05 * dif_mul
+                r = -.1 * dif_mul
 
             is_correct = None
             self.step_counter += 1
@@ -200,12 +202,12 @@ class RSVPCPEnvironment(object):
                              'list_distribution'])[-1]
             # s = np.append(s, self.step_counter / max_num_seq)
 
-            if np.argmax(s[:-1]) == self.alp.index(self.oracle.state):
+            if a == self.alp.index(self.oracle.state):
 
                 r = 1
                 is_correct = True
             else:
-                r = -2
+                r = -5
                 is_correct = False
             d = 1
 

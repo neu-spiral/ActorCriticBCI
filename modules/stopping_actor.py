@@ -112,7 +112,10 @@ class DeepStoppingActorCritic(object):
                                             self.init_state: cell_state})
 
         if flag_train:
-            a = np.random.choice(range(a_w.shape[1]), p=a_w.ravel())
+            if np.random.rand(1) > .6:
+                a = np.random.choice(range(a_w.shape[1]), p=a_w.ravel())
+            else:
+                a = np.argmax(a_w)
         else:
             a = np.argmax(a_w)
 

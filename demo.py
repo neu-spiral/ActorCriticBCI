@@ -17,27 +17,27 @@ from modules.environment import RSVPCPEnvironment
 
 num_workers = multiprocessing.cpu_count()
 max_step_episode = 20
-max_global_epoch = 10000
+max_global_epoch = 1000000
 global_network_scope = 'Global_Net'
 backprop_num = 50
 
-flag_train = False  # if set to true trains the mode and saves the model to path
+flag_train = True  # if set to true trains the mode and saves the model to path
 max_num_mc = 500  # # of episodes in testing if flag is false
-model_path = "model/model_5/model.ckpt"
+model_path = "model/model_6/model.ckpt"
 
 gamma = 0.95  # decay for reward in time
-learning_rate_actor = 0.001  # learning rate for actor
-learning_rate_critic = 0.005  # learning rate for critic
+learning_rate_actor = 0.01  # learning rate for actor
+learning_rate_critic = 0.05  # learning rate for critic
 global_running_reward = []
 list_decision, list_steps = [], []
 global_epoch = 0
-hop = 200
+hop = max_global_epoch / 200
 
 size_state = 28
-size_action = 2
+size_action = 29
 
 # difficulty is increased, agent is tasked to perform faster!
-step_difficulty = max_global_epoch/3  # steps to increase difficulty
+step_difficulty = max_global_epoch / 3  # steps to increase difficulty
 
 
 class Worker(object):
